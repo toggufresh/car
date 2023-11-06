@@ -1,18 +1,18 @@
+from flask import Flask
 from neo4j import GraphDatabase, Driver, AsyncGraphDatabase, AsyncDriver
+from flask import render_template, request, redirect, url_for
+from project import app
+import json
 
-# Kjri3Nql99OoG5YcsgOWxrsb8LYIpnasclZTaauvtc8
-URI = "17222aae.databases.neo4j.io"
-AUTH = ("neo4j", "Kjri3Nql99OoG5YcsgOWxrsb8LYIpnasclZTaauvtc8")
+app = Flask(__name__)
+
+URI = "uri"
+AUTH = ("username", "password")
 def _get_connection() -> GraphDatabase:
    driver = GraphDatabase.driver(URI, auth=AUTH)
    driver.verify_connectivity()
    return driver
 
-# Use the execute_query function to execute custom queries in the Neo4j database.
-# This allows for flexibility in performing actions such as creating, updating, or deleting records
-# with dynamic queries that may not be covered by specific functions.
-
-    
 def node_to_json(node):
   node_properties = dict(node.items())
   return node_properties
@@ -131,22 +131,17 @@ def deleteEmployee(employee_id):
 #Implementing ordering of cars
 def order_car(customer_id, car_reg):
     with _get_connection().session() as session:
-        # Check if the customer has not booked other cars
         cars = session.run("MATCH (c:Customer {id: $customer_id})-[:BOOKED]->(car:Car {status: 'booked'}) RETURN car;",
                            customer_id=customer_id)
         if cars.single() is not None:
-            # The customer has already booked a car, return an error message or handle it as needed
             return "Customer has already booked a car", 400
 
-        # Change the status of the car with car_reg from 'available' to 'booked'
         result = session.run("MATCH (car:Car {reg: $car_reg, status: 'available'}) SET car.status = 'booked' RETURN car;",
                              car_reg=car_reg)
         car = result.single()
         if car:
-            # Car successfully booked
             return "Car booked successfully"
         else:
-            # Car with car_reg not found or not available, return an error message
             return "Car not found or not available", 404
 
 
@@ -154,61 +149,37 @@ def order_car(customer_id, car_reg):
 
 def cancel_order_car(customer_id, car_reg):
     with _get_connection().session() as session:
-        # Check if the customer has booked the car
         cars = session.run("MATCH (c:Customer {id: $customer_id})-[:BOOKED]->(car:Car {reg: $car_reg, status: 'booked'}) RETURN car;",
                            customer_id=customer_id, car_reg=car_reg)
         if cars.single() is not None:
-            # The customer has booked the car, make the car available
             result = session.run("MATCH (car:Car {reg: $car_reg, status: 'booked'}) SET car.status = 'available' RETURN car;",
                                  car_reg=car_reg)
             car = result.single()
             if car:
-                # Car successfully canceled
                 return "Car booking canceled successfully"
         else:
-            # Customer has not booked the car or the car is not currently booked
             return "Customer has not booked the car or car not booked currently", 404
 
-#implementing renting cars
+#Implementing renting cars
 def rent_car(customer_id, car_reg):
     with _get_connection().session() as session:
-        # Check if the customer has booked the car
         cars = session.run("MATCH (c:Customer {id: $customer_id})-[:BOOKED]->(car:Car {reg: $car_reg, status: 'booked'}) RETURN car;",
                            customer_id=customer_id, car_reg=car_reg)
         if cars.single() is not None:
-            # The customer has booked the car, change the car status to 'rented'
             result = session.run("MATCH (car:Car {reg: $car_reg, status: 'booked'}) SET car.status = 'rented' RETURN car;",
                                  car_reg=car_reg)
             car = result.single()
             if car:
-                # Car successfully rented
                 return "Car rented successfully"
         else:
-            # Customer has not booked the car or the car is not currently booked
             return "Customer has not booked the car or car not booked currently", 404
         
 
 
-#implementing returning cars
-def return_car(customer_id, car_reg, car_status):
-    with _get_connection().session() as session:
-        # Check if the customer has rented the car
-        cars = session.run("MATCH (c:Customer {id: $customer_id})-[:RENTED]->(car:Car {reg: $car_reg, status: 'rented'}) RETURN car;",
-                           customer_id=customer_id, car_reg=car_reg)
-        if cars.single() is not None:
-            # The customer has rented the car, change the car status to 'available' or 'damaged' based on car_status
-            if car_status == 'ok':
-                result = session.run("MATCH (car:Car {reg: $car_reg, status: 'rented'}) SET car.status = 'available' RETURN car;",
-                                     car_reg=car_reg)
-            elif car_status == 'damaged':
-                result = session.run("MATCH (car:Car {reg: $car_reg, status: 'rented'}) SET car.status = 'damaged' RETURN car;",
-                                     car_reg=car_reg)
-            car = result.single()
-            if car:
-                # Car successfully returned
-                return f"Car returned successfully with status: {car_status}"
-            else:
-            # Customer has not rented the car or the car is not currently rented
-              return "Customer has not rented the car or car not rented currently", 404
+#Implementing returning cars
+@app.route('/return_car/<int:customer_id>/<string:car_reg>/<string:car_status>', methods=['PUT'])
+def return_car_info(customer_id, car_reg, car_status):
+    result = return_car(customer_id, car_reg, car_status)
+    return result
 
 
