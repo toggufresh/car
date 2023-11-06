@@ -1,4 +1,4 @@
-# car
+#Done by Jens Bogen and Tor Gunnar Hole.
 API for car rental service. School assignment for INFO212.
 
 Add __init__.py, my_dao.py and my_services.py into flask-mvc-example/projects/controllers/----HERE----...
