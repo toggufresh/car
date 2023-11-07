@@ -1,108 +1,71 @@
 from project import app
-from flask import Flask, request, redirect, url_for
 from project.controllers.my_dao import *
-
 
 @app.route('/save_car', methods=['POST'])
 def save_car_info():
   record = json.loads(request.data)
   print(record)
 
-@app.route('/get_cars', methods=['GET'])
+
+@app.route('/find_all_cars', methods=['GET'])
 def query_records():
-   return findAllCars()
-
-@app.route('/update_car/<make>/<model>/<reg>/<year>/<status>', methods=['PUT'])
-def update_car_info(make, model, reg, year, status):
-    return update_car(make, model, reg, year, status)
+   return find_all_cars()
 
 
-@app.route('/delete_car/<string:reg>', methods=['DELETE'])
-def delete_car_info(reg):
-    delete_car(reg)
-    return findAllCars()
-
-@app.route('/get_cars_by_reg_number/<string:car_reg>', methods=['GET'])
-def find_car_by_reg_number(car_reg):
-    return findCarByReg(car_reg)
-
-@app.route('/create_car/<string:make>/<string:model>/<string:car_reg>/<int:year>/<string:status>', methods=['POST'])
-def create_car_info(make, model, car_reg, year, status):
-    cars = create_car(make, model, car_reg, year, status)
-    return cars
+@app.route('/update_car', methods=['PUT'])
+def update_car_info():
+  record = json.loads(request.data)
+  print(record)
+  return update_car(record['make'], record['model'], record['car_reg'], record['status'])
 
 
-#Implementing Customer database
-@app.route('/create_customer/<string:name>/<int:age>/<string:address>', methods=['POST'])
-def create_customer_info(name, age, address):
-    new_customer = createCustomer(name, age, address)
-    return jsonify(new_customer)
-
-@app.route('/get_customers', methods=['GET'])
-def query_customers():
-    customers = findAllCustomers()
-    return {'customers': customers}
-
-@app.route('/get_customer/<int:customer_id>', methods=['GET'])
-def get_customer_by_id(customer_id):
-    customer = findCustomerById(customer_id)
-    return customer
-
-@app.route('/update_customer/<int:customer_id>/<string:name>/<int:age>/<string:address>', methods=['PUT'])
-def update_customer_info(customer_id, name, age, address):
-    updated_customer = updateCustomer(customer_id, name, age, address)
-    return jsonify(updated_customer), 200
-
-@app.route('/delete_customer/<int:customer_id>', methods=['DELETE'])
-def delete_customer_info(customer_id):
-    customer = findCustomerById(customer_id)
-    if customer:
-        deleteCustomer(customer_id)
+@app.route('/delete_car', methods=['DELETE'])
+def delete_car_info():
+  record = json.loads(request.data)
+  car_reg = record.get('car_reg')
+  print(record)
+  delete_car(car_reg)
+  return f'{car_reg} has been deleted succesfully.\n{find_all_cars()}'
 
 
-#Implementing Employee
-@app.route('/create_employee', methods=['POST'])
-def create_employee_info():
-    data = request.get_json()
-    name = data.get('name')
-    address = data.get('address')
-    branch = data.get('branch')
-    employees = createEmployee(name, address, branch)
-    return employees
-
-@app.route('/findEmployeeById', methods=['GET'])
-def query_employees():
-    return findAllEmployees()
-
-@app.route('/update_employee/<int:employee_id>/<string:name>/<string:address>/<string:branch>', methods=['PUT'])
-def update_employee_info(employee_id, name, address, branch):
-    updated_employee = updateEmployee(employee_id, name, address, branch)
-    return jsonify(updated_employee), 200
-
-@app.route('/delete_employee', methods=['DELETE'])
-def delete_employee_info(employee_id):
-    deleteEmployee(employee_id)
-    return "Employee deleted"
+@app.route('/find_car', methods=['POST'])
+def find_car_by_reg_number():
+   record = json.loads(request.data)
+   car = record.get('car_reg')
+   print(record)
+   return find_car(car)
 
 
+@app.route('/create_car', methods=['POST'])
+def create_car_info():
+    data = json.loads(request.data)
+    make = data.get('make')
+    model = data.get('model')
+    car_reg = data.get('car_reg')
+    status = data.get('status')
+    new_car = create_car(make, model, car_reg, status)
+    return new_car
 
-#Implementing ordering of cars
-@app.route('/order_car/<int:customer_id>/<string:car_reg>', methods=['POST'])
-def order_car_info(customer_id, car_reg):
-    result = order_car(customer_id, car_reg)
-    return result
-
-
-#Implementing cancellation of cars
-@app.route('/cancel_order_car/<int:customer_id>/<int:car_reg>', methods=['POST'])
-def cancel_order_car_info(customer_id, car_reg):
+#implementing ordering of cars
+@app.route('/order_car', methods=['POST'])
+def order_car_info():
     data = json.loads(request.data)
     customer_id = data.get('customer_id')
     car_reg = data.get('car_reg')
-
     if customer_id is None or car_reg is None:
         return "Please provide both customer_id and car_reg.", 400
+    else:
+        result = order_car(customer_id, car_reg)
+        return result
 
+#Implementing cancellation of cars
+@app.route('/cancel_order_car', methods=['POST'])
+def cancel_order_car_info():
+    data = json.loads(request.data)
+    customer_id = data.get("customer_id")
+    car_reg = data.get("car_reg")
+    if customer_id is None or car_reg is None:
+        return "Please provide both customer_id and car_reg.", 400
     result = cancel_order_car(customer_id, car_reg)
 
     return result
@@ -113,17 +76,111 @@ def rent_car_info():
     data = json.loads(request.data)
     customer_id = data.get('customer_id')
     car_reg = data.get('car_reg')
-
     if customer_id is None or car_reg is None:
         return "Please provide both customer_id and car_reg.", 400
-
     else:
         result = rent_car(customer_id, car_reg)
         return result
 
 
 #Implementing returning cars
-@app.route('/return_car/<int:customer_id>/<string:car_reg>/<string:car_status>', methods=['PUT'])
+@app.route('/return_car/', methods=['POST'])
 def return_car_info():
-    result = return_car(customer_id, car_reg, car_status)
-    return result
+    data = json.loads(request.data)
+    customer_id = data.get('customer_id')
+    car_reg = data.get('car_reg')
+    status = data.get('status')
+    if customer_id is None or car_reg is None or status is None:
+        return "Please provide customer_id, car_reg, and car_status.", 400
+    else:
+        result = return_car(customer_id, car_reg, status)
+        return result
+
+#Implementing Customer database
+@app.route('/create_customer', methods=['POST'])
+def create_customer_info():
+    data = json.loads(request.data)
+    name = data.get('name')
+    age = data.get('age')
+    address = data.get('address')
+    new_customer = create_customer(name, age, address)
+    return new_customer
+
+@app.route('/find_all_customers', methods=['GET'])
+def query_customers():
+    return find_all_employees()
+
+@app.route('/find_customer', methods=['GET'])
+def get_customer_by_id():
+    data = json.loads(request.data)
+    customer_id = data.get('customer_id')
+    return find_customer(customer_id)
+    
+
+@app.route('/update_customer', methods=['POST'])
+def update_customer_info():
+    data = json.loads(request.data)
+    customer_id = data.get('customer_id')
+    name = data.get('name')
+    age = data.get('age')
+    address = data.get('address')
+    updated_customer = update_customer(customer_id, name, age, address)
+    return updated_customer
+
+@app.route('/delete_customer', methods=['DELETE'])
+def delete_customer_info():
+    data = json.loads(request.data)
+    customer_id = data.get('customer_id')
+    customer = find_customer(customer_id)
+    if customer:
+        delete_customer(customer_id)
+        return {'Customer has been deleted.'}
+    else:
+        return {'Error. Could not find customer in database.'}
+
+
+#Implementing Employee
+
+@app.route('/create_employee', methods=['POST'])
+def create_employee_info():
+    data = json.loads(request.data)
+    name = data.get('name')
+    address = data.get('address')
+    branch = data.get('branch')
+    employees = create_employee(name, address, branch)
+    return employees
+
+@app.route('/update_employee', methods=['PUT'])
+def update_employee_info():
+    data = json.loads(request.data)
+    name = data.get('name')
+    address = data.get('address')
+    branch = data.get('branch')
+    updated_employee = update_employee(name, address, branch)
+    return updated_employee
+
+@app.route('/delete_employee', methods=['DELETE'])
+def delete_employee_info():
+    data = json.loads(request.data)
+    name = data.get('name')
+    employee = find_employee(name)
+    if employee:
+        delete_employee(name)
+    return f'Employee"{name} deleted.\n{data}'
+
+
+@app.route('/find_all_employees', methods=['GET'])
+def query_employees():
+    return find_all_employees()
+
+@app.route('/find_employee', methods=['GET'])
+def find_employee_info():
+    name = request.get_json('name')
+    employees = find_employee(name)
+    if employees:
+        return employees
+    else:
+        return 'Employee not found'
+
+
+
