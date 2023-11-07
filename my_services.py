@@ -12,31 +12,26 @@ def save_car_info():
 def query_records():
    return findAllCars()
 
-@app.route('/update_car', methods=['PUT'])
-def update_car_info():
-  record = json.loads(request.data)
-  print(record)
-  return update_car(record['make'], record['model'], record['reg'], record['year'], record['capacity'])
+@app.route('/update_car/<make>/<model>/<reg>/<year>/<status>', methods=['PUT'])
+def update_car_info(make, model, reg, year, status):
+    return update_car(make, model, reg, year, status)
 
-@app.route('/delete_car', methods=['DELETE'])
-def delete_car_info():
-  record = json.loads(request.data)
-  print(record)
-  delete_car(record['reg'])
-  return findAllCars()
 
-@app.route('/get_cars_by_reg_number/<string:car_reg>', methods=['POST'])
-def find_car_by_reg_number():
-   record = json.loads(request.data)
-   print(record)
-   print(record['reg'])
-   return findCarByReg(record['reg'])
+@app.route('/delete_car/<string:reg>', methods=['DELETE'])
+def delete_car_info(reg):
+    delete_car(reg)
+    return findAllCars()
 
-@app.route('/create_car/<string:make>/<string:model>/<string:car_reg>/<int:year>/<int:capacity>', methods=['POST'])
-def create_car_info(make, model, car_reg, year, capacity):
-    cars = create_car(make, model, car_reg, year, capacity)
+@app.route('/get_cars_by_reg_number/<string:car_reg>', methods=['GET'])
+def find_car_by_reg_number(car_reg):
+    return findCarByReg(car_reg)
+
+@app.route('/create_car/<string:make>/<string:model>/<string:car_reg>/<int:year>/<string:status>', methods=['POST'])
+def create_car_info(make, model, car_reg, year, status):
+    cars = create_car(make, model, car_reg, year, status)
     return cars
-  
+
+
 #Implementing Customer database
 @app.route('/create_customer/<string:name>/<int:age>/<string:address>', methods=['POST'])
 def create_customer_info(name, age, address):
@@ -128,16 +123,7 @@ def rent_car_info():
 
 
 #Implementing returning cars
-@app.route('/return_car', methods=['POST'])
+@app.route('/return_car/<int:customer_id>/<string:car_reg>/<string:car_status>', methods=['PUT'])
 def return_car_info():
-    data = json.loads(request.data)
-    customer_id = data.get('customer_id')
-    car_reg = data.get('car_reg')
-    car_status = data.get('car_status')
-
-    if customer_id is None or car_reg is None or car_status is None:
-        return "Please provide customer_id, car_reg, and car_status.", 400
-
-    else:
-        result = return_car(customer_id, car_reg, car_status)
-        return result
+    result = return_car(customer_id, car_reg, car_status)
+    return result

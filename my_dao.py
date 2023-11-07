@@ -6,8 +6,8 @@ import json
 
 app = Flask(__name__)
 
-URI = "uri"
-AUTH = ("username", "password")
+URI = "URI WITH HTTPS"
+AUTH = ("USERNAME", "PASSWORD")
 def _get_connection() -> GraphDatabase:
    driver = GraphDatabase.driver(URI, auth=AUTH)
    driver.verify_connectivity()
@@ -42,19 +42,21 @@ def node_to_json(node):
   node_properties = dict(node.items())
   return node_properties
 
-def update_car(make, model, reg, year, capacity):
-  with _get_connection().session() as session:
-   cars = session.run("MATCH (a:Car{reg:$reg}) set a.make=$make, a.model=$model, a.year = $year, a.capacity = $capacity RETURN a;", reg=reg, make=make, model=model, year=year, capacity=capacity)
-   nodes_json = [node_to_json(record["a"]) for record in cars]
+def update_car(make, model, reg, year, status):
+    with _get_connection().session() as session:
+        cars = session.run(
+            "MATCH (a:Car {reg: $reg}) SET a.make = $make, a.model = $model, a.year = $year, a.status = $status RETURN a;",
+            reg=reg, make=make, model=model, year=year, status=status
+        )
+        nodes_json = [node_to_json(record["a"]) for record in cars]
+        return nodes_json
 
-   updated_car = save_car(nodes_json)
-   return updated_car
   
 
 
-def save_car(make, model, reg, year, capacity):
+def save_car(make, model, reg, year, status):
     with _get_connection().session() as session:
-        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, capacity:$capacity}) RETURN a;", make=make, model=model, reg=reg, year=year, capacity=capacity)
+        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, status:$status}) RETURN a;", make=make, model=model, reg=reg, year=year, status=status)
         nodes_json = [node_to_json(record["a"]) for record in cars]
         return nodes_json
 
@@ -63,9 +65,9 @@ def delete_car(reg):
     session.run("MATCH (a:Car {reg: $reg}) delete a;", reg=reg)
     return 
 
-def create_car(make, model, reg, year, capacity):
+def create_car(make, model, reg, year, status):
     with _get_connection().session() as session:
-        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, capacity:$capacity}) RETURN a;", make=make, model=model, reg=reg, year=year, capacity=capacity)
+        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, status:$status}) RETURN a;", make=make, model=model, reg=reg, year=year, status=status)
         nodes_json = [node_to_json(record["a"]) for record in cars]
         return nodes_json
 
@@ -173,13 +175,19 @@ def rent_car(customer_id, car_reg):
                 return "Car rented successfully"
         else:
             return "Customer has not booked the car or car not booked currently", 404
-        
-
 
 #Implementing returning cars
-@app.route('/return_car/<int:customer_id>/<string:car_reg>/<string:car_status>', methods=['PUT'])
-def return_car_info(customer_id, car_reg, car_status):
-    result = return_car(customer_id, car_reg, car_status)
-    return result
+def return_car(customer_id, car_reg, car_status):
+    with _get_connection().session() as session:
+        cars = session.run(
+            "MATCH (c:Customer {id: $customer_id})-[:RENTED]->(car:Car {reg: $car_reg, status: 'rented'}) RETURN car;",
+                            customer_id=customer_id, car_reg=car_reg)
+        result = session.run("MATCH (car:Car {reg: $car_reg, status: 'rented'}) SET car.status = 'damaged' RETURN car;",
+                             car_reg=car_reg)
+        car = result.single()
+        if car:
+            return f"Car returned successfully with status: {car_status}"
+        else:
+            return "Customer has not rented the car or car not rented currently", 404
 
 
