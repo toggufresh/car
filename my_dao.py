@@ -21,26 +21,25 @@ def _get_connection() -> Driver:
    return driver
 
 # CAR RELATED 
-def create_car(make, model, reg, year, capacity):
+def create_car(make, model, reg, year):
     with _get_connection().session() as session:
-        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, capacity:$capacity}) RETURN a;", make=make, model=model, reg=reg, year=year, capacity=capacity)
+        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year}) RETURN a;", make=make, model=model, reg=reg, year=year)
         nodes_json = [node_to_json(record["a"]) for record in cars]
         return nodes_json
 
 
-def save_car(make, model, reg, year, capacity):
+def save_car(make, model, reg, year, status):
     with _get_connection().session() as session:
-        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, capacity:$capacity}) RETURN a;", make=make, model=model, reg=reg, year=year, capacity=capacity)
+        cars = session.run("CREATE (a:Car {make:$make, model:$model, reg:$reg, year:$year, status:$status}) RETURN a;", make=make, model=model, reg=reg, year=year, status=status)
         nodes_json = [node_to_json(record["a"]) for record in cars]
         return nodes_json
 
 
-def update_car(make, model, reg, year, capacity):
+def update_car(make, model, reg, year, status):
   with _get_connection().session() as session:
-   cars = session.run("MATCH (a:Car{reg:$reg}) set a.make=$make, a.model=$model, a.year = $year, a.capacity = $capacity RETURN a;", reg=reg, make=make, model=model, year=year, capacity=capacity)
+   cars = session.run("MATCH (a:Car{reg:$reg}) set a.make=$make, a.model=$model, a.year = $year, a.status = $status RETURN a;", reg=reg, make=make, model=model, year=year, status=status)
    nodes_json = [node_to_json(record["a"]) for record in cars]
-   updated_car = save_car(nodes_json)
-   return updated_car
+   return nodes_json
 
 def find_car(reg):
   with _get_connection().session() as session:
@@ -90,9 +89,9 @@ def find_customer(customer_id):
         customer = session.run("MATCH (c:Customer) WHERE ID(c) = $customer_id RETURN c;", customer_id=customer_id)
         return node_to_json(customer.single()["c"]) if customer.single() else None
 
-def create_customer(name, age, address):
+def create_customer(name, age, address, customer_id):
     with _get_connection().session() as session:
-        result = session.run("CREATE (c:Customer {name:$name, age:$age, address:$address}) RETURN c;", name=name, age=age, address=address)
+        result = session.run("CREATE (c:Customer {name:$name, age:$age, address:$address, customer_id:$customer_id}) RETURN c;", name=name, age=age, address=address, customer_id=customer_id)
         return node_to_json(result.single()["c"])
 
 def update_customer(customer_id, name, age, address):

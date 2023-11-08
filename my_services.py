@@ -14,24 +14,30 @@ def query_records():
 
 @app.route('/update_car', methods=['PUT'])
 def update_car_info():
-  record = json.loads(request.data)
-  print(record)
-  return update_car(record['make'], record['model'], record['car_reg'], record['status'])
+    data = json.loads(request.data)
+    make = data.get('make')
+    model = data.get('model')
+    reg = data.get('reg')
+    year = data.get('year')
+    status = data.get('status')
+
+    updated_car = update_car(make, model, reg, year, status)
+    return updated_car
 
 
 @app.route('/delete_car', methods=['DELETE'])
 def delete_car_info():
   record = json.loads(request.data)
-  car_reg = record.get('car_reg')
+  reg = record.get('reg')
   print(record)
-  delete_car(car_reg)
-  return f'{car_reg} has been deleted succesfully.\n{find_all_cars()}'
+  delete_car(reg)
+  return f'{reg} has been deleted succesfully.\n{find_all_cars()}'
 
 
 @app.route('/find_car', methods=['POST'])
 def find_car_by_reg_number():
    record = json.loads(request.data)
-   car = record.get('car_reg')
+   car = record.get('reg')
    print(record)
    return find_car(car)
 
@@ -41,9 +47,9 @@ def create_car_info():
     data = json.loads(request.data)
     make = data.get('make')
     model = data.get('model')
-    car_reg = data.get('car_reg')
-    status = data.get('status')
-    new_car = create_car(make, model, car_reg, status)
+    reg = data.get('reg')
+    year = data.get('year')
+    new_car = create_car(make, model, reg, year)
     return new_car
 
 #implementing ordering of cars
@@ -51,11 +57,11 @@ def create_car_info():
 def order_car_info():
     data = json.loads(request.data)
     customer_id = data.get('customer_id')
-    car_reg = data.get('car_reg')
-    if customer_id is None or car_reg is None:
-        return "Please provide both customer_id and car_reg.", 400
+    reg = data.get('reg')
+    if customer_id is None or reg is None:
+        return "Please provide both customer_id and reg.", 400
     else:
-        result = order_car(customer_id, car_reg)
+        result = order_car(customer_id, reg)
         return result
 
 #Implementing cancellation of cars
@@ -63,10 +69,10 @@ def order_car_info():
 def cancel_order_car_info():
     data = json.loads(request.data)
     customer_id = data.get("customer_id")
-    car_reg = data.get("car_reg")
-    if customer_id is None or car_reg is None:
-        return "Please provide both customer_id and car_reg.", 400
-    result = cancel_order_car(customer_id, car_reg)
+    reg = data.get("reg")
+    if customer_id is None or reg is None:
+        return "Please provide both customer_id and reg.", 400
+    result = cancel_order_car(customer_id, reg)
 
     return result
 
@@ -75,11 +81,11 @@ def cancel_order_car_info():
 def rent_car_info():
     data = json.loads(request.data)
     customer_id = data.get('customer_id')
-    car_reg = data.get('car_reg')
-    if customer_id is None or car_reg is None:
-        return "Please provide both customer_id and car_reg.", 400
+    reg = data.get('reg')
+    if customer_id is None or reg is None:
+        return "Please provide both customer_id and reg.", 400
     else:
-        result = rent_car(customer_id, car_reg)
+        result = rent_car(customer_id, reg)
         return result
 
 
@@ -88,12 +94,12 @@ def rent_car_info():
 def return_car_info():
     data = json.loads(request.data)
     customer_id = data.get('customer_id')
-    car_reg = data.get('car_reg')
+    reg = data.get('reg')
     status = data.get('status')
-    if customer_id is None or car_reg is None or status is None:
-        return "Please provide customer_id, car_reg, and car_status.", 400
+    if customer_id is None or reg is None or status is None:
+        return "Please provide customer_id, reg, and car_status.", 400
     else:
-        result = return_car(customer_id, car_reg, status)
+        result = return_car(customer_id, reg, status)
         return result
 
 #Implementing Customer database
@@ -103,7 +109,8 @@ def create_customer_info():
     name = data.get('name')
     age = data.get('age')
     address = data.get('address')
-    new_customer = create_customer(name, age, address)
+    customer_id = data.get('customer_id')
+    new_customer = create_customer(name, age, address, customer_id)
     return new_customer
 
 @app.route('/find_all_customers', methods=['GET'])
